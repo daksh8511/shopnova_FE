@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
@@ -45,6 +45,13 @@ import {
 import Profile from './Profile'
 import NodeApi from '../NodeApi'
 
+type SearchProduct = {
+  _id: string
+  title: string
+  price: number | string
+  image?: string
+}
+
 const categories = [
   { label: 'Electronics', icon: <Smartphone size={15} />, href: '#' },
   { label: 'Fashion', icon: <Shirt size={15} />, href: '#' },
@@ -58,25 +65,50 @@ const Navbar = () => {
   const isLoggedIn = localStorage.getItem('token')
   const [openPopup, setOpenPopup] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const [searchInput, setSearchInput] = useState('')
-  const [searchProducts, setSearchProducts] = useState([])
+  const [searchProducts, setSearchProducts] = useState<SearchProduct[]>([])
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
   const hideCategoryBar =
     location.pathname === "/products" ||
     location.pathname.startsWith("/products/");
 
-  const SearchAPI = async () => {
-    try {
-      const response = await NodeApi.get('/product/get')
-      if (response?.data?.success) {
-        setSearchProducts(response?.data?.allProducts)
-      }
-    } catch (error) {
-      console.error('error', error)
-    }
+  const handleProductSelect = (productId: string) => {
+    setSearchInput('')
+    navigate(`/products/${productId}`)
+    setShowSearchDropdown(false)
   }
 
   useEffect(() => {
-    SearchAPI()
+    const trimmedQuery = searchInput.trim()
+
+    if (!trimmedQuery) {
+      const timeoutId = window.setTimeout(() => {
+        setSearchProducts([])
+        setShowSearchDropdown(false)
+      }, 0)
+
+      return () => window.clearTimeout(timeoutId)
+    }
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await NodeApi.get('/product/search_product', {
+          params: { search: trimmedQuery },
+        })
+
+        if (response?.data?.success) {
+          setSearchProducts(response?.data?.search_result || [])
+          setShowSearchDropdown(true)
+        }
+      } catch (error) {
+        console.error('error', error)
+        setSearchProducts([])
+        setShowSearchDropdown(false)
+      }
+    }, 250)
+
+    return () => window.clearTimeout(timer)
   }, [searchInput])
 
   return (
@@ -105,12 +137,48 @@ const Navbar = () => {
                 </div>
                 <Input
                   placeholder="Search products, brands, categories..."
+                  value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
+                  onFocus={() => searchInput.trim() && setShowSearchDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowSearchDropdown(false), 150)}
                   className="pl-9 pr-24 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500 h-10 rounded-xl"
                 />
-                <Button size="sm" className="absolute right-1 h-8 bg-white text-black border-0 text-xs px-3 rounded-lg hover:bg-zinc-200">
-                  Search
-                </Button>
+
+                {showSearchDropdown && (
+                  <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden">
+                    {searchProducts.length > 0 ? (
+
+                      searchProducts.slice(0, 6).map((product: SearchProduct) => (
+                        <Link
+                          key={product?._id}
+                          to={`/products/${product?._id}`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 transition-colors"
+                        >
+                          <img
+                            src={product?.image}
+                            alt={product?.title}
+                            className="h-10 w-10 rounded-lg object-cover"
+                          />
+
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm text-white">
+                              {product.title}
+                            </p>
+                            <p className="text-xs text-zinc-400">
+                              ₹{product.price}
+                            </p>
+                          </div>
+                        </Link>
+                      ))
+
+                    ) : (
+                      <div className="px-3 py-3 text-sm text-zinc-400">
+                        No products found
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -186,7 +254,6 @@ const Navbar = () => {
 
               {
                 isLoggedIn ? (
-
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="outline-none">
@@ -279,8 +346,42 @@ const Navbar = () => {
               <Search size={15} className="absolute left-3 text-zinc-500" />
               <Input
                 placeholder="Search products..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => searchInput.trim() && setShowSearchDropdown(true)}
+                onBlur={() => setTimeout(() => setShowSearchDropdown(false), 150)}
                 className="pl-9 pr-4 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500 h-10 rounded-xl"
               />
+
+              {showSearchDropdown && (
+                <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden">
+                  {searchProducts.length > 0 ? (
+                    searchProducts.slice(0, 6).map((product: SearchProduct) => (
+                      <Link
+                        key={product._id}
+                        to={`/products/${product._id}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleProductSelect(product._id)}
+                        className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 transition-colors"
+                      >
+                        <img
+                          src={product.image || 'https://placehold.co/48x48'}
+                          alt={product.title}
+                          className="h-10 w-10 rounded-lg object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm text-white">{product.title}</p>
+                          <p className="text-xs text-zinc-400">₹{product.price}</p>
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="px-3 py-3 text-sm text-zinc-400">
+                      No products found
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

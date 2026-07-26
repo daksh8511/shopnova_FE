@@ -79,9 +79,6 @@ const TrendingSection = () => {
             </h2>
             <p className="text-zinc-500 mt-1.5 text-sm">Top picks loved by thousands of shoppers</p>
           </div>
-          <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 gap-2 bg-transparent whitespace-nowrap">
-            View All <ArrowRight size={14} />
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
