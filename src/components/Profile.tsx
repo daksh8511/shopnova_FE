@@ -5,15 +5,16 @@ import {
     DialogTitle,
 } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
+import useAuthStore from "../stores/user";
 
-interface ProfileDataType{
-    open : boolean;
-    onOpenChange : () => void;
+interface ProfileDataType {
+    open: boolean;
+    onOpenChange: () => void;
 }
 
-const Profile = ({ open, onOpenChange } : ProfileDataType) => {
+const Profile = ({ open, onOpenChange }: ProfileDataType) => {
 
-    const user = JSON.parse(localStorage.getItem("user"))
+    const { user } = useAuthStore()
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -25,12 +26,12 @@ const Profile = ({ open, onOpenChange } : ProfileDataType) => {
                 <div className="space-y-4">
                     <div>
                         <p className="text-sm text-zinc-400">Name</p>
-                        <p className="font-medium">{user.name}</p>
+                        <p className="font-medium">{user?.name}</p>
                     </div>
 
                     <div>
                         <p className="text-sm text-zinc-400">Email</p>
-                        <p className="font-medium">{user.email}</p>
+                        <p className="font-medium">{user?.email}</p>
                     </div>
 
                     <Button className="w-full">

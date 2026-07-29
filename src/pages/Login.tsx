@@ -22,6 +22,7 @@ import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import axios from 'axios'
 import NodeApi from '../NodeApi'
+import userAuthStore from '../stores/user'
 
 const recentOrders = [
   { emoji: '📱', name: 'iPhone 15 Pro', status: 'Delivered', date: 'Jul 12' },
@@ -32,6 +33,9 @@ const recentOrders = [
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
+  const { setAuth, user } = userAuthStore()
+
+  console.log(user)
 
   const formik = useFormik({
     initialValues: {
@@ -63,9 +67,7 @@ const Login = () => {
       })
 
       if (response.data?.success) {
-        console.log(response?.data)
-        localStorage.setItem('token', response.data.token)
-        localStorage.setItem('user', JSON.stringify(response?.data?.user))
+        setAuth(response?.data?.user, response?.data?.token)
         navigate('/')
       }
     } catch (error: unknown) {
@@ -76,6 +78,8 @@ const Login = () => {
       }
     }
   }
+
+  console.log(user)
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4 py-20">

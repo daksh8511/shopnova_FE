@@ -1,8 +1,10 @@
 import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
+import useAuthStore from "../stores/user";
 
 const AuthRoute = ({ children }: { children: ReactNode }) => {
-  return localStorage.getItem("token")
+  const {token} = useAuthStore()
+  return token
     ? <Navigate to="/" replace />
     : <>{children}</>;
 };
