@@ -6,6 +6,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Label } from "../components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import NodeApi from "../NodeApi";
+import { Loader2 } from 'lucide-react'
 
 interface Product {
   _id: string;
@@ -51,9 +52,11 @@ const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([])
   const [sortOptions, setOptions] = useState<string>("")
   const [selectedCategory, setSelectedCategory] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const getProducts = async () => {
+      setLoading(true)
       try {
         let query = "";
 
@@ -74,6 +77,8 @@ const ProductsPage = () => {
         }
       } catch (error) {
         console.error("Error:", error);
+      } finally {
+        setLoading(false)
       }
     };
 
@@ -135,7 +140,11 @@ const ProductsPage = () => {
         {/* Products */}
         <div className="col-span-12 lg:col-span-9">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {products.length === 0 ? (
+            {loading ? (
+              <div className="col-span-full flex min-h-[25rem] items-center justify-center">
+                <Loader2 />
+              </div>
+            ) : products.length === 0 ? (
               <div className="col-span-full flex min-h-[25rem] items-center justify-center">
                 <h2 className="text-xl font-semibold">
                   No products found
@@ -152,30 +161,28 @@ const ProductsPage = () => {
                         className="h-full w-full object-cover"
                       />
                     </div>
-                  </Link>
 
-                  <CardContent className="space-y-4 p-4">
-                    <Link to={`/products/${item._id}`}>
-                      <h3 className="text-lg font-semibold hover:text-primary">
+                    <CardContent className="space-y-4 p-4">
+                      <h3 className="text-lg line-clamp-1 font-semibold hover:text-primary">
                         {item.title}
                       </h3>
-                    </Link>
 
-                    <p className="text-2xl font-bold">
-                      ₹{item.price.toLocaleString("en-IN")}
-                    </p>
+                      <p className="text-2xl font-bold">
+                        ₹{item.price.toLocaleString("en-IN")}
+                      </p>
 
-                    <Button className="w-full">
-                      Add to Cart
-                    </Button>
-                  </CardContent>
+                      <Button className="w-full">
+                        Show details
+                      </Button>
+                    </CardContent>
+                  </Link>
                 </Card>
               ))
             )}
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

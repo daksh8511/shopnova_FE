@@ -4,67 +4,10 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import CustomCard from './CustomCard'
+import { useNavigate } from 'react-router-dom'
 
-const trendingProducts = [
-  {
-    _id: 1,
-    name: 'Apple iPhone 16 Pro Max',
-    brand: 'Apple',
-    category: 'Smartphones',
-    emoji: '📱',
-    price: '₹1,34,900',
-    originalPrice: '₹1,59,900',
-    discount: '16%',
-    rating: 4.8,
-    reviews: 12450,
-    badge: 'Bestseller',
-    sold: '5K+ sold',
-  },
-  {
-    _id: 2,
-    name: 'Sony WH-1000XM5 Headphones',
-    brand: 'Sony',
-    category: 'Audio',
-    emoji: '🎧',
-    price: '₹24,990',
-    originalPrice: '₹34,990',
-    discount: '29%',
-    rating: 4.9,
-    reviews: 8231,
-    badge: 'Hot',
-    sold: '3K+ sold',
-  },
-  {
-    _id: 3,
-    name: "Levi's 501 Original Jeans",
-    brand: "Levi's",
-    category: 'Fashion',
-    emoji: '👖',
-    price: '₹2,999',
-    originalPrice: '₹5,499',
-    discount: '45%',
-    rating: 4.7,
-    reviews: 6789,
-    badge: 'Trending',
-    sold: '10K+ sold',
-  },
-  {
-    _id: 4,
-    name: 'Samsung 55" QLED 4K Smart TV',
-    brand: 'Samsung',
-    category: 'TVs',
-    emoji: '📺',
-    price: '₹54,990',
-    originalPrice: '₹89,990',
-    discount: '39%',
-    rating: 4.6,
-    reviews: 4120,
-    badge: 'Deal',
-    sold: '1.5K+ sold',
-  },
-]
-
-const TrendingSection = () => {
+const TrendingSection = ({ trendingProducts }) => {
+  const navigate = useNavigate()
   return (
     <section className="bg-black py-20" id="trending">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -88,7 +31,7 @@ const TrendingSection = () => {
         </div>
 
         <div className="mt-10 text-center">
-          <Button className="bg-white text-black border-0 hover:bg-zinc-200 gap-2">
+          <Button onClick={() => navigate('/products')} className="bg-white text-black border-0 hover:bg-zinc-200 gap-2">
             Explore All Trending <ArrowRight size={14} />
           </Button>
         </div>

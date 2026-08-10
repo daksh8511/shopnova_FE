@@ -118,10 +118,10 @@ const HeroSlider = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center py-16">
         <div
           className={`flex flex-col lg:flex-row items-center gap-10 lg:gap-20 transition-all duration-380 ${isAnimating
-              ? dir === 'right'
-                ? '-translate-x-10 opacity-0'
-                : 'translate-x-10 opacity-0'
-              : 'translate-x-0 opacity-100'
+            ? dir === 'right'
+              ? '-translate-x-10 opacity-0'
+              : 'translate-x-10 opacity-0'
+            : 'translate-x-0 opacity-100'
             }`}
         >
           <div className="flex-1 space-y-6 text-center lg:text-left">
@@ -153,18 +153,13 @@ const HeroSlider = () => {
               ))}
             </div>
 
-            <div className="flex items-center gap-3 justify-center lg:justify-start flex-wrap">
-              <Link to="/signup">
-                <Button size="lg" className="bg-white text-black border-0 gap-2 text-sm font-bold px-6 h-12 hover:bg-zinc-200">
-                  {slide.ctaPrimary} <ArrowRight size={16} />
-                </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 gap-2 text-sm font-semibold px-6 h-12 bg-transparent">
-                <ShoppingCart size={15} /> View Cart
+            <Link to="/signup">
+              <Button size="lg" className="bg-white text-black border-0 gap-2 text-sm font-bold px-6 h-12 hover:bg-zinc-200">
+                {slide.ctaPrimary} <ArrowRight size={16} />
               </Button>
-            </div>
+            </Link>
 
-            <p className="text-xs text-zinc-600">{slide.tag}</p>
+            <p className="text-xs text-zinc-600 mt-3">{slide.tag}</p>
           </div>
 
           <div className="shrink-0 flex flex-col items-center gap-4">

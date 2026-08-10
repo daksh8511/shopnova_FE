@@ -79,8 +79,6 @@ const Login = () => {
     }
   }
 
-  console.log(user)
-
   return (
     <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4 py-20">
       <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
