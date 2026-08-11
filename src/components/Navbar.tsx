@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
@@ -40,6 +40,7 @@ import Profile from './Profile'
 import NodeApi from '../NodeApi'
 import userAuthStore from '../stores/user'
 import { Skeleton } from './ui/skeleton'
+import useCartStore from '../stores/cart'
 
 type SearchProduct = {
   _id: string
@@ -49,40 +50,57 @@ type SearchProduct = {
 }
 
 const Navbar = () => {
-  const { user, token } = userAuthStore()
+  const { user, token, logout } = userAuthStore()
+  const { cart, clearCart } = useCartStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [openPopup, setOpenPopup] = useState(false)
   const navigate = useNavigate()
   const [searchInput, setSearchInput] = useState('')
   const [searchProducts, setSearchProducts] = useState<SearchProduct[]>([])
   const [showSearchDropdown, setShowSearchDropdown] = useState(false)
-  const [cartItems, setCartItems] = useState([])
+  const [cartItems, setCartItems] = useState<{ items: { product?: { _id?: string; title?: string; price?: number; image?: string }; qty?: number }[] }[]>([])
   const [loading, setLoading] = useState(false)
+
+  const remoteCartItems = Array.isArray(cartItems) && cartItems[0]?.items ? cartItems[0].items : []
+  const guestCartItems = cart
+  const activeCartItems = token ? remoteCartItems : guestCartItems
+
+  const cartCount = activeCartItems.reduce((acc: number, item: { qty?: number }) => acc + (item.qty ?? 0), 0)
+  const cartTotal = activeCartItems.reduce((sum: number, item: { qty?: number; product?: { price?: number }; price?: number }) => {
+    const price = token ? item.product?.price ?? 0 : item.price ?? 0
+    const qty = item.qty ?? 1
+    return sum + price * qty
+  }, 0)
   const handleProductSelect = (productId: string) => {
     setSearchInput('')
     navigate(`/products/${productId}`)
     setShowSearchDropdown(false)
   }
 
-  const FetchCart = async () => {
-    setLoading(true)
-    try {
-      const response = await NodeApi.get(`/cart/get/${user?._id}`)
+  console.log('cart from store : ', cart)
+  console.log('cart from api : ', cartItems)
 
-      console.log(response?.data)
-      if (response?.data?.success) {
-        setCartItems(response?.data?.carts)
+  useEffect(() => {
+    const fetchCartIfNeeded = async () => {
+      setLoading(true)
+      try {
+        if (user !== null) {
+          const response = await NodeApi.get(`/cart/get/${user._id}`)
+          if (response?.data?.success) {
+            setCartItems(response?.data?.carts)
+          }
+        } else {
+          setCartItems([])
+        }
+      } catch (error) {
+        console.error("Error : ", error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error("Error : ", error)
-    } finally {
-      setLoading(false)
     }
-  }
 
-  // useEffect(() => {
-  //   FetchCart()
-  // }, [])
+    void fetchCartIfNeeded()
+  }, [user])
 
   useEffect(() => {
     const trimmedQuery = searchInput.trim()
@@ -115,8 +133,6 @@ const Navbar = () => {
 
     return () => window.clearTimeout(timer)
   }, [searchInput])
-
-  console.log()
 
   return (
     loading ? (<Skeleton />) :
@@ -200,7 +216,7 @@ const Navbar = () => {
                 </button>
 
                 <Sheet>
-                  <SheetTrigger asChild>
+                  <SheetTrigger>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -208,7 +224,7 @@ const Navbar = () => {
                     >
                       <ShoppingCart size={18} />
                       <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-white text-black border-0">
-                        {cartItems.length}
+                        {cartCount}
                       </Badge>
                     </Button>
                   </SheetTrigger>
@@ -221,52 +237,44 @@ const Navbar = () => {
                     </SheetHeader>
 
                     <div className="mt-6 space-y-4 flex flex-col h-full">
-                      {
-                        cartItems.length === 0 ? <div className="flex h-full items-center justify-center">
-                          <p className="text-center text-zinc-500">
-                            Your cart is empty
-                          </p>
-                        </div> :
-                          cartItems[0]?.items?.map((item) => {
-                            return (
-                              <div className="flex gap-3 border-b border-white/10 pb-4">
-                                <img
-                                  src="https://placehold.co/80x80"
-                                  alt=""
-                                  className="w-20 h-20 rounded-lg object-cover"
-                                />
+                      {activeCartItems.length === 0 ? (
+                        <div className="flex h-full items-center justify-center">
+                          <p className="text-center text-zinc-500">Your cart is empty</p>
+                        </div>
+                      ) : (
+                        activeCartItems.map((item: any) => {
+                          const product = token ? item.product : item
+                          return (
+                            <div className="flex gap-3 border-b border-white/10 pb-4" key={product?._id || item?._id}>
+                              <img
+                                src={product?.image || 'https://placehold.co/80x80'}
+                                alt={product?.title || 'Cart item'}
+                                className="w-20 h-20 rounded-lg object-cover"
+                              />
 
-                                <div className="flex-1">
-                                  <h3 className="font-medium">
-                                    {item?.product?.title}
-                                  </h3>
+                              <div className="flex-1">
+                                <h3 className="font-medium">{product?.title}</h3>
 
-                                  <p className="text-zinc-400 text-sm">
-                                    ₹{item?.product?.price}
-                                  </p>
+                                <p className="text-zinc-400 text-sm">₹{product?.price}</p>
 
-                                  <p className="text-xs text-zinc-500">
-                                    Qty: {item?.qty}
-                                  </p>
-                                </div>
+                                <p className="text-xs text-zinc-500">Qty: {item?.qty ?? 1}</p>
                               </div>
-                            )
-                          })
-                      }
+                            </div>
+                          )
+                        })
+                      )}
 
                       {/* Total */}
-                      {
-                        cartItems.length !== 0 && <div className='mt-auto mb-5'>
+                      {activeCartItems.length !== 0 && (
+                        <div className='mt-auto mb-5'>
                           <div className="flex justify-between font-semibold text-lg">
                             <span>Total</span>
-                            <span>₹1,19,999</span>
+                            <span>₹{cartTotal.toLocaleString('en-IN')}</span>
                           </div>
 
-                          <Button className="w-full">
-                            Checkout
-                          </Button>
+                          <Button className="w-full">Checkout</Button>
                         </div>
-                      }
+                      )}
                     </div>
                   </SheetContent>
                 </Sheet>
@@ -274,7 +282,7 @@ const Navbar = () => {
                 {
                   token ? (
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger>
                         <button className="outline-none">
                           <Avatar className="h-9 w-9 cursor-pointer border border-white/20">
                             <AvatarImage src="https://github.com/shadcn.png" />
@@ -293,28 +301,32 @@ const Navbar = () => {
                           <DropdownMenuLabel className="text-zinc-400">
                             My Account
                           </DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <DropdownMenuItem
-                              onClick={() => setOpenPopup(true)}
-                              className="cursor-pointer flex items-center gap-2"
-                            >
-                              <UserCircle size={16} />
-                              Profile
-                            </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setOpenPopup(true)}
+                            className="cursor-pointer flex items-center gap-2"
+                          >
+                            <UserCircle size={16} />
+                            Profile
                           </DropdownMenuItem>
 
-                          <DropdownMenuItem asChild>
-                            <Link to="/settings" className='flex items-center gap-2'>
-                              <Settings size={16} />
-                              Settings
-                            </Link>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setMobileOpen(false)
+                              navigate('/settings')
+                            }}
+                            className='flex items-center gap-2'
+                          >
+                            <Settings size={16} />
+                            Settings
                           </DropdownMenuItem>
                         </DropdownMenuGroup>
 
                         <DropdownMenuSeparator className="bg-white/10" />
                         <DropdownMenuItem
                           onClick={() => {
-                            user?.logout()
+                            logout()
+                            clearCart()
+                            setCartItems([])
                           }}
                           className="cursor-pointer text-red-400"
                         >

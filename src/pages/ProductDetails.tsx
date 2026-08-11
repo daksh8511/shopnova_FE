@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import NodeApi from "../NodeApi";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
+import useCartStore from "../stores/cart";
+import useAuthStore from "../stores/user";
 
 interface Product {
     _id: string;
@@ -36,6 +38,8 @@ const getDiscountPercent = (category: string) => {
 
 const ProductDetails = () => {
     const { id } = useParams();
+    const { token, user } = useAuthStore()
+    const { addCartItem } = useCartStore()
     const [product, setProduct] = useState<Product | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
     const [activeSlide, setActiveSlide] = useState(0);
@@ -108,6 +112,30 @@ const ProductDetails = () => {
         setActiveSlide((prev) => (prev - 1 + slides.length) % slides.length);
     };
 
+
+    const AddToCart = async () => {
+        if (token) {
+            try {
+                await NodeApi.post(`/cart/add_cart`, {
+                    userId: user?._id,
+                    productId: product?._id,
+                    qty: 1,
+                })
+            } catch (error) {
+                console.error("Error : ", error)
+            }
+        } else {
+            addCartItem({
+                _id: product?._id,
+                category: product?.category,
+                image: product?.image,
+                price: product?.price,
+                title: product?.title,
+                qty: 1,
+            })
+        }
+    }
+
     return (
         <div className="container mx-auto mt-20 px-4 py-8">
             <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
@@ -167,7 +195,7 @@ const ProductDetails = () => {
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <Button className="flex-1">Add to Cart</Button>
+                        <Button onClick={() => AddToCart()} className="flex-1">Add to Cart</Button>
                         <Button variant="outline" className="flex-1">
                             Buy Now
                         </Button>

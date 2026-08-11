@@ -9,7 +9,7 @@ import useAuthStore from "../stores/user";
 
 interface ProfileDataType {
     open: boolean;
-    onOpenChange: () => void;
+    onOpenChange: (open: boolean) => void;
 }
 
 const Profile = ({ open, onOpenChange }: ProfileDataType) => {

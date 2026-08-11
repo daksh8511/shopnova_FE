@@ -23,6 +23,7 @@ import * as Yup from 'yup'
 import axios from 'axios'
 import NodeApi from '../NodeApi'
 import userAuthStore from '../stores/user'
+import useCartStore from '../stores/cart'
 
 const recentOrders = [
   { emoji: '📱', name: 'iPhone 15 Pro', status: 'Delivered', date: 'Jul 12' },
@@ -34,6 +35,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
   const { setAuth, user } = userAuthStore()
+  const { cart, clearCart } = useCartStore()
 
   console.log(user)
 
@@ -68,6 +70,26 @@ const Login = () => {
 
       if (response.data?.success) {
         setAuth(response?.data?.user, response?.data?.token)
+
+        if (cart.length > 0) {
+          const cartMerge = cart.reduce<Record<string, number>>((acc, item) => {
+            const qty = item.qty ?? 1
+            acc[item._id] = (acc[item._id] ?? 0) + qty
+            return acc
+          }, {})
+
+          const addRequests = Object.entries(cartMerge).map(([productId, qty]) =>
+            NodeApi.post('/cart/add_cart', {
+              userId: response.data.user._id,
+              productId,
+              qty,
+            }),
+          )
+
+          await Promise.allSettled(addRequests)
+          clearCart()
+        }
+
         navigate('/')
       }
     } catch (error: unknown) {
