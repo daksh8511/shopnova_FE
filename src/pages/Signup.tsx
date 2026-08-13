@@ -12,26 +12,12 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Truck,
-  Shield,
-  RefreshCw,
-  Tag,
-  Gift,
 } from 'lucide-react'
 
 import { useState } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import ApiNode from '../NodeApi'
-
-
-const perks = [
-  { icon: <Truck size={15} className="text-white" />, text: 'Free delivery on every first order' },
-  { icon: <Tag size={15} className="text-white" />, text: 'Exclusive member-only deals & coupons' },
-  { icon: <RefreshCw size={15} className="text-white" />, text: '30-day easy returns & exchanges' },
-  { icon: <Shield size={15} className="text-white" />, text: 'Secure payments & buyer protection' },
-  { icon: <Gift size={15} className="text-white" />, text: '₹200 welcome coupon on sign up' },
-]
 
 
 // validation schema
@@ -79,7 +65,7 @@ const Signup = () => {
 
     } catch (error) {
 
-      console.log("Signup Error:", error)
+      console.error("Signup Error:", error)
 
     }
 
@@ -246,10 +232,6 @@ const Signup = () => {
                 }
 
               </div>
-
-
-
-
 
               {/* PASSWORD */}
 

@@ -34,10 +34,8 @@ const recentOrders = [
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
-  const { setAuth, user } = userAuthStore()
+  const { setAuth } = userAuthStore()
   const { cart, clearCart } = useCartStore()
-
-  console.log(user)
 
   const formik = useFormik({
     initialValues: {

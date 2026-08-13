@@ -15,6 +15,7 @@ interface CartDataType {
     addCartItem: (item: CartItems) => void
     clearCart: () => void
     setCartItems: (items: CartItems[]) => void
+    removeFromCart: (item: CartItems) => void;
 }
 
 const useCartStore = create<CartDataType>()(
@@ -46,6 +47,14 @@ const useCartStore = create<CartDataType>()(
 
             clearCart: () => set({ cart: [] }),
             setCartItems: (items) => set({ cart: items }),
+
+            removeFromCart: (item) => {
+                set((state) => ({
+                    cart: state.cart.filter(
+                        (cartItem) => cartItem._id !== item._id
+                    ),
+                }))
+            },
         }),
         {
             name: 'cart-storage',
