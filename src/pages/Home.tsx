@@ -31,7 +31,6 @@ const Home = () => {
   }, [])
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-
       {
         loading ? (
           <div className="flex flex-1 items-center justify-center min-h-screen">
@@ -45,8 +44,6 @@ const Home = () => {
           </main>
         )
       }
-
-
     </div>
   )
 }

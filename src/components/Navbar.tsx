@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import {
@@ -7,7 +7,6 @@ import {
   Search,
   Menu,
   X,
-  MapPin,
   Package,
   UserRound,
   Settings,
@@ -44,7 +43,7 @@ type SearchProduct = {
 
 const Navbar = () => {
   const { user, token, logout } = userAuthStore()
-  const {clearCart } = useCartStore()
+  const { clearCart } = useCartStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [openPopup, setOpenPopup] = useState(false)
   const navigate = useNavigate()
@@ -53,6 +52,17 @@ const Navbar = () => {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false)
   const [cartItems, setCartItems] = useState<{ items: { product?: { _id?: string; title?: string; price?: number; image?: string }; qty?: number }[] }[]>([])
   const [loading, setLoading] = useState(false)
+  const location = useLocation()
+
+  const handleRemoteRemove = (productId?: string) => {
+    if (!productId) return
+    setCartItems((prev) =>
+      prev.map((cart) => ({
+        ...cart,
+        items: cart.items.filter((it) => it.product?._id !== productId),
+      })),
+    )
+  }
 
   const handleProductSelect = (productId: string) => {
     setSearchInput('')
@@ -80,6 +90,16 @@ const Navbar = () => {
     }
 
     void fetchCartIfNeeded()
+
+    const handleCartUpdated = () => {
+      void fetchCartIfNeeded()
+    }
+
+    window.addEventListener('cart:updated', handleCartUpdated)
+
+    return () => {
+      window.removeEventListener('cart:updated', handleCartUpdated)
+    }
   }, [user])
 
   useEffect(() => {
@@ -187,15 +207,10 @@ const Navbar = () => {
               </div>
 
               <div className="flex items-center gap-1.5 shrink-0">
-                <button className="hidden lg:flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all">
-                  <MapPin size={14} className="text-zinc-300" />
-                  <div className="text-left">
-                    <div className="text-zinc-500 text-[10px]">Deliver to</div>
-                    <div className="text-white font-semibold">Mumbai 400001</div>
-                  </div>
-                </button>
-
-                <CartSidebar cartItems={cartItems} />
+                {
+                  !location.pathname.includes('checkout') &&
+                  <CartSidebar cartItems={cartItems} onRemove={handleRemoteRemove} />
+                }
 
                 {
                   token ? (

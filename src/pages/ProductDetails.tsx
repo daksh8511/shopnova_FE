@@ -114,26 +114,29 @@ const ProductDetails = () => {
 
 
     const AddToCart = async () => {
-        if (token) {
+        if (token && user?._id && product?._id) {
             try {
-                await NodeApi.post(`/cart/add_cart`, {
-                    userId: user?._id,
-                    productId: product?._id,
+                await NodeApi.post('/cart/add_cart', {
+                    userId: user._id,
+                    productId: product._id,
                     qty: 1,
                 })
+
+                window.dispatchEvent(new CustomEvent('cart:updated'))
+                return
             } catch (error) {
-                console.error("Error : ", error)
+                console.error('Error adding product to cart:', error)
             }
-        } else {
-            addCartItem({
-                _id: product?._id,
-                category: product?.category,
-                image: product?.image,
-                price: product?.price,
-                title: product?.title,
-                qty: 1,
-            })
         }
+
+        addCartItem({
+            _id: product?._id || '',
+            category: product?.category || '',
+            image: product?.image || '',
+            price: product?.price || 0,
+            title: product?.title || '',
+            qty: 1,
+        })
     }
 
     return (

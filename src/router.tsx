@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AuthRoute from "./components/AuthRoutes";
 import ProductDetails from "./pages/ProductDetails";
+import Checkout from "./pages/Checkout";
 
 export const router = createBrowserRouter([
     {
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
             {
                 path: 'products/:id',
                 element: <ProductDetails />
+            },
+            {
+                path: 'checkout',
+                element: <Checkout />
             },
         ]
     },

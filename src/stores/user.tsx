@@ -24,6 +24,8 @@ interface AuthStore {
   token: string | null;
 
   setAuth: (user: User, token: string) => void;
+  setUser: (user: User) => void;
+  updateUserAddress: (address: Address) => void;
   logout: () => void;
 }
 
@@ -38,6 +40,16 @@ const useAuthStore = create<AuthStore>()(
           user,
           token,
         }),
+
+      setUser: (user) =>
+        set({
+          user,
+        }),
+
+      updateUserAddress: (address) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, address } : null,
+        })),
 
       logout: () =>
         set({
