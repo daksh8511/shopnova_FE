@@ -24,6 +24,7 @@ import axios from 'axios'
 import NodeApi from '../NodeApi'
 import userAuthStore from '../stores/user'
 import useCartStore from '../stores/cart'
+import OtpComponent from '../components/OtpComponent'
 
 const recentOrders = [
   { emoji: '📱', name: 'iPhone 15 Pro', status: 'Delivered', date: 'Jul 12' },
@@ -33,6 +34,7 @@ const recentOrders = [
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
+  const [otpDialogOpen, setOtpDialogOpen] = useState(false)
   const navigate = useNavigate()
   const { setAuth } = userAuthStore()
   const { cart, clearCart } = useCartStore()
@@ -41,7 +43,6 @@ const Login = () => {
     initialValues: {
       email: '',
       password: '',
-      remember: false,
     },
 
     validationSchema: Yup.object({
@@ -59,7 +60,7 @@ const Login = () => {
     },
   })
 
-  const SignIn = async (values: { email: string; password: string; remember: boolean }) => {
+  const SignIn = async (values: { email: string; password: string; }) => {
     try {
       const response = await NodeApi.post('/auth/login', {
         email: values.email,
@@ -215,17 +216,6 @@ const Login = () => {
                 </div>
               </div>
 
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="remember"
-                  checked={formik.values.remember}
-                  onChange={formik.handleChange}
-                  className="accent-white w-4 h-4"
-                />
-                <span className="text-sm text-zinc-500">Remember me for 30 days</span>
-              </label>
-
               <Button type="submit" className="w-full bg-white text-black border-0 h-11 font-bold gap-2 hover:bg-zinc-200">
                 Sign In <ArrowRight size={15} />
               </Button>
@@ -237,9 +227,11 @@ const Login = () => {
 
               <Separator className="bg-white/10" />
 
-              <Button type="button" variant="outline" className="w-full border-white/15 text-zinc-300 hover:text-white hover:bg-white/10 bg-transparent h-10 gap-2 text-sm">
-                📱 Login with OTP instead
+              <Button onClick={() => setOtpDialogOpen(true)} type="button" variant="outline" className="w-full border-white/15 text-zinc-300 hover:text-white hover:bg-white/10 bg-transparent h-10 gap-2 text-sm">
+                Login with OTP instead
               </Button>
+
+              <OtpComponent open={otpDialogOpen} onOpenChange={setOtpDialogOpen} />
 
               <p className="text-center text-sm text-zinc-500">
                 New to ShopNova?{' '}

@@ -46,6 +46,7 @@ interface CartSidebarDatatype {
     cartItems: CartData[]
     onRemove?: (productId?: string) => void
 }
+
 const CartSidebar = ({ cartItems, onRemove }: CartSidebarDatatype) => {
     const navigate = useNavigate()
     const { cart, removeFromCart } = useCartStore()
@@ -53,7 +54,7 @@ const CartSidebar = ({ cartItems, onRemove }: CartSidebarDatatype) => {
     const remoteCartItems: CartItem[] = Array.isArray(cartItems) && cartItems[0]?.items ? cartItems[0].items : []
     const activeCartItems: (CartItem)[] = token ? remoteCartItems : cart
 
-    const cartTotal = activeCartItems.reduce((sum: number, item: { qty?: number; product?: { price?: number }; price?: number }) => {
+    const cartTotal = activeCartItems.reduce((sum, item) => {
         const price = token ? item.product?.price ?? 0 : item.price ?? 0
         const qty = item.qty ?? 1
         return sum + price * qty
@@ -72,7 +73,7 @@ const CartSidebar = ({ cartItems, onRemove }: CartSidebarDatatype) => {
                 try {
                     removeFromCart({ _id: productId } as any)
                 } catch (e) {
-                    console.warn('Failed to update local cart store', e)
+                    console.error('Failed to update local cart store', e)
                 }
             }
         } else {

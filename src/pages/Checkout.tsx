@@ -19,7 +19,6 @@ import {
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Badge } from '../components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +28,7 @@ import {
 import useCartStore from '../stores/cart';
 import useAuthStore from '../stores/user';
 import NodeApi from '../NodeApi';
+import userGuestCheckout from '../stores/guestCheckout';
 
 interface NormalizedItem {
   productId: string;
@@ -44,13 +44,15 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { cart, removeFromCart, addCartItem, clearCart } = useCartStore();
   const { user, token, updateUserAddress } = useAuthStore();
+  const { guestCheckout, setGuestCheckout } = userGuestCheckout()
+  const checkoutAddress = token ? user?.address : guestCheckout?.address
   const [loadingCart, setLoadingCart] = useState(false)
   const [remoteItems, setRemoteItems] = useState<NormalizedItem[]>([]);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
-  const [areaInput, setAreaInput] = useState(user?.address?.area || '');
-  const [cityInput, setCityInput] = useState(user?.address?.city || '');
-  const [stateInput, setStateInput] = useState(user?.address?.state || '');
-  const [pincodeInput, setPincodeInput] = useState<string | number>(user?.address?.pincode || '');
+  const [areaInput, setAreaInput] = useState('');
+  const [cityInput, setCityInput] = useState('');
+  const [stateInput, setStateInput] = useState('');
+  const [pincodeInput, setPincodeInput] = useState<string | number>('');
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressSuccessMsg, setAddressSuccessMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,7 +64,7 @@ const Checkout: React.FC = () => {
     setLoadingCart(true);
     try {
       const response = await NodeApi.get(`/cart/get/${user._id}`);
-      if (response?.data?.success && Array.isArray(response?.data?.carts)) {
+      if (response?.data?.success) {
         const rawItems = response.data.carts[0]?.items || [];
         const normalized: NormalizedItem[] = rawItems
           .filter((it) => it.product)
@@ -90,13 +92,19 @@ const Checkout: React.FC = () => {
 
   // Sync inputs if user address updates
   useEffect(() => {
-    if (user?.address) {
-      setAreaInput(user.address.area || '');
-      setCityInput(user.address.city || '');
-      setStateInput(user.address.state || '');
-      setPincodeInput(user.address.pincode || '');
-    }
-  }, [user]);
+    const address = token
+      ? user?.address
+      : guestCheckout?.address;
+
+    setAreaInput(address?.area || '');
+    setCityInput(address?.city || '');
+    setStateInput(address?.state || '');
+    setPincodeInput(address?.pincode || '');
+  }, [
+    token,
+    user?.address,
+    guestCheckout?.address,
+  ]);
 
   // Active items list (remote if logged in, local store if guest)
   const items: NormalizedItem[] = token
@@ -111,13 +119,13 @@ const Checkout: React.FC = () => {
     }));
 
   // Address validation check
-  const currentAddress = user?.address;
+  const currentAddress = checkoutAddress; // Use combined address (guest or logged-in)
   const hasAddress = Boolean(
     currentAddress &&
     currentAddress.area?.trim() &&
     currentAddress.city?.trim() &&
     currentAddress.state?.trim() &&
-    (currentAddress.pincode ? Number(currentAddress.pincode) > 0 : false)
+    Number(currentAddress.pincode) > 0
   );
 
   // Price calculations
@@ -183,6 +191,7 @@ const Checkout: React.FC = () => {
   // Save address action
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setSavingAddress(true);
     setAddressSuccessMsg(null);
 
@@ -195,27 +204,39 @@ const Checkout: React.FC = () => {
 
     try {
       if (token && user?._id) {
-        const response = await NodeApi.put(`/auth/set_address/${user._id}`, newAddress);
+        // Logged-in user → backend + user store
+        const response = await NodeApi.put(
+          `/auth/set_address/${user._id}`,
+          newAddress
+        );
+
         if (response?.data?.success) {
           updateUserAddress(newAddress);
-          setAddressSuccessMsg('Address updated successfully!');
-          setTimeout(() => {
-            setAddressModalOpen(false);
-            setAddressSuccessMsg(null);
-          }, 800);
+
+          setAddressSuccessMsg(
+            'Address updated successfully!'
+          );
         }
       } else {
-        // Guest user address update in store
-        updateUserAddress(newAddress);
+        // Guest → localStorage through Zustand persist
+        setGuestCheckout({
+          address: newAddress,
+        });
+
         setAddressSuccessMsg('Address saved!');
-        setTimeout(() => {
-          setAddressModalOpen(false);
-          setAddressSuccessMsg(null);
-        }, 800);
       }
+
+      setTimeout(() => {
+        setAddressModalOpen(false);
+        setAddressSuccessMsg(null);
+      }, 800);
+
     } catch (err) {
       console.error('Failed to update address', err);
-      setAddressSuccessMsg('Failed to update address. Please try again.');
+
+      setAddressSuccessMsg(
+        'Failed to update address. Please try again.'
+      );
     } finally {
       setSavingAddress(false);
     }
@@ -248,16 +269,13 @@ const Checkout: React.FC = () => {
                 <div>
                   <Link
                     to="/products"
-                    className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors mb-2"
+                    className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors my-2"
                   >
                     <ArrowLeft size={16} />
                     Continue Shopping
                   </Link>
                   <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
                     Checkout
-                    <Badge className="bg-white/10 text-white hover:bg-white/10 font-medium text-xs">
-                      {cart?.length > 0 ? cart?.length : remoteItems?.length} Items
-                    </Badge>
                   </h1>
                 </div>
               </div>
@@ -283,14 +301,9 @@ const Checkout: React.FC = () => {
 
                     {/* 1. Added Products in Cart */}
                     <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-xl">
-                      <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
-                        <div className="flex items-center gap-2">
-                          <ShoppingCart size={20} className="text-zinc-300" />
-                          <h2 className="text-lg font-bold text-white">Items in Cart</h2>
-                        </div>
-                        <span className="text-xs text-zinc-400 font-mono">
-                          Total Qty: <strong className="text-white">{totalQty}</strong>
-                        </span>
+                      <div className="flex items-center gap-2 mb-3">
+                        <ShoppingCart size={20} className="text-zinc-300" />
+                        <h2 className="text-lg font-bold text-white">Items in Cart</h2>
                       </div>
 
                       <div className="space-y-4">
@@ -392,13 +405,13 @@ const Checkout: React.FC = () => {
                           <CheckCircle2 size={20} className="text-emerald-400 shrink-0 mt-0.5" />
                           <div className="space-y-1 text-sm">
                             <div className="font-semibold text-emerald-300 flex items-center gap-2">
-                              Deliver to Saved Address
+                              {token ? 'Deliver to Saved Address' : 'Delivery Address'}
                             </div>
                             <p className="text-zinc-200 font-medium">
-                              {currentAddress?.area}
+                              {checkoutAddress?.area}
                             </p>
                             <p className="text-zinc-400 text-xs">
-                              {currentAddress?.city}, {currentAddress?.state} — {currentAddress?.pincode}
+                              {checkoutAddress?.city}, {checkoutAddress?.state} — {checkoutAddress?.pincode}
                             </p>
                           </div>
                         </div>
@@ -489,7 +502,7 @@ const Checkout: React.FC = () => {
                           <div className="p-3 bg-zinc-900 rounded-xl border border-white/10 text-xs text-zinc-300 flex items-center gap-2">
                             <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
                             <span className="truncate">
-                              Shipping to <strong>{currentAddress?.city} ({currentAddress?.pincode})</strong>
+                              Shipping to <strong>{checkoutAddress?.city} ({checkoutAddress?.pincode})</strong>
                             </span>
                           </div>
                         ) : (
@@ -664,7 +677,7 @@ const Checkout: React.FC = () => {
                       <div className="flex justify-between border-t border-white/5 pt-2">
                         <span className="text-zinc-500">Delivery Address:</span>
                         <span className="text-zinc-300 font-medium text-right max-w-[200px] truncate">
-                          {currentAddress?.city}, {currentAddress?.state} ({currentAddress?.pincode})
+                          {checkoutAddress?.city}, {checkoutAddress?.state} ({checkoutAddress?.pincode})
                         </span>
                       </div>
                     </div>
