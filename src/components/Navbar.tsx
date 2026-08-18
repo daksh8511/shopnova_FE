@@ -178,6 +178,7 @@ const Navbar = () => {
                             to={`/products/${product?._id}`}
                             onMouseDown={(e) => e.preventDefault()}
                             className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 transition-colors"
+                            onClick={() => setShowSearchDropdown(false)}
                           >
                             <img
                               src={product?.image}
