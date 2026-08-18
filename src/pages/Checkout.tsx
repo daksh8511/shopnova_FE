@@ -156,6 +156,7 @@ const Checkout: React.FC = () => {
         setRemoteItems((prev) =>
           prev.map((it) => (it.productId === item.productId ? { ...it, qty: newQty } : it))
         );
+        window.dispatchEvent(new Event('cart:updated'));
       } catch (err) {
         console.error('Failed to update quantity', err);
       }
@@ -180,6 +181,7 @@ const Checkout: React.FC = () => {
           productId: cartItemId || item.productId,
         });
         setRemoteItems((prev) => prev.filter((it) => it.productId !== item.productId));
+        window.dispatchEvent(new Event('cart:updated'));
       } catch (err) {
         console.error('Failed to remove item', err);
       }

@@ -62,16 +62,15 @@ const CartSidebar = ({ cartItems, onRemove }: CartSidebarDatatype) => {
 
     const RemoveItemFromCart = async (item: any) => {
         if (token) {
-            const productId = item?.product?._id ?? item?._id
             const response = await NodeApi.post('/cart/product_remove', {
                 userId: user?._id,
-                productId,
+                productId: item?._id,
             })
 
             if (response?.data?.success) {
-                if (typeof onRemove === 'function') onRemove(productId)
+                if (typeof onRemove === 'function') onRemove(item?.product?._id)
                 try {
-                    removeFromCart({ _id: productId } as any)
+                    removeFromCart({ _id: item?.product?._id } as any)
                 } catch (e) {
                     console.error('Failed to update local cart store', e)
                 }
